@@ -2,8 +2,6 @@
 
 # BusyBox 1.25.1 compatible
 
-clear
-
 WIDTH=36
 
 # helper
@@ -92,17 +90,32 @@ LAN_IP="$(ifconfig br-lan 2>/dev/null |
 # WAN
 WAN_IP=""
 
-for IFACE in eth0 eth1 eth2 eth3 eth4 bond0 ppp0 wan; do
-    IP="$(ifconfig "$IFACE" 2>/dev/null |
-        awk '/inet addr:/ {print $2}' |
-        sed 's/addr://' |
-        head -1)"
-
-    if [ -n "$IP" ]; then
-        WAN_IP="$IP"
+# relay mode
+RELAY_IFACE=""
+for RIFACE in wl12 wl13 wl0 wl1; do
+    if iwconfig "$RIFACE" 2>/dev/null | grep -q 'Mode:Managed'; then
+        RELAY_IFACE="$RIFACE"
         break
     fi
 done
+
+if [ -n "$RELAY_IFACE" ] && [ "$LAN_IP" != "N/A" ]; then
+    WAN_IP="$LAN_IP [relay]"
+fi
+
+if [ -z "$WAN_IP" ]; then
+    for IFACE in eth0 eth1 eth2 eth3 eth4 bond0 ppp0 wan; do
+        IP="$(ifconfig "$IFACE" 2>/dev/null |
+            awk '/inet addr:/ {print $2}' |
+            sed 's/addr://' |
+            head -1)"
+
+        if [ -n "$IP" ]; then
+            WAN_IP="$IP"
+            break
+        fi
+    done
+fi
 
 [ -z "$WAN_IP" ] && WAN_IP="N/A"
 
