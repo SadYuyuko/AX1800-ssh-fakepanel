@@ -1,9 +1,9 @@
 # AX1800-ssh-fakepanel  
-适用于小米AX1800，在原版系统下不依赖插件仅用ssh进行面板风味信息展示  
+适用于小米AX1800，在原版系统下不依赖插件仅用ssh展示温度内存等信息  
 
 1. ssh连接  
 2. 执行`vi /usr/bin/panel`  
-3. 粘贴[面板](https://raw.githubusercontent.com/SadYuyuko/AX1800-ssh-fakepanel/panel.sh)内容
+3. 粘贴[面板](https://raw.githubusercontent.com/SadYuyuko/AX1800-ssh-fakepanel/main/panel.sh)内容
 4. `ESC`，`:wq`保存退出  
 5. 执行`chmod +x /usr/bin/panel`  
 6. 执行`panel`，效果应该如图所示
