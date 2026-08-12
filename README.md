@@ -8,4 +8,5 @@
 5. 执行`chmod +x /usr/bin/panel`  
 6. 执行`panel`，效果应该如图所示
 
-  <img width="837" height="956" alt="1" src="https://github.com/user-attachments/assets/5da5a3ab-7b33-49f5-bce8-75e3ce3e10ca" />
+  <img width="437" height="500" alt="1" src="https://github.com/user-attachments/assets/5da5a3ab-7b33-49f5-bce8-75e3ce3e10ca" />
+ 
