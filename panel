@@ -21,6 +21,15 @@ HOSTNAME="$(hostname 2>/dev/null)"
 
 LOAD="$(cat /proc/loadavg 2>/dev/null | awk '{print $1,$2,$3}')"
 
+# load
+if [ -n "$LOAD" ] && [ "$(echo "$LOAD" | awk '{print ($1 > 3) ? 1 : 0}')" = "1" ]; then
+    LOAD_RED="\033[31m"
+    LOAD_RESET="\033[0m"
+else
+    LOAD_RED=""
+    LOAD_RESET=""
+fi
+
 UPTIME_SEC="$(cat /proc/uptime 2>/dev/null | awk '{print int($1)}')"
 
 if [ -n "$UPTIME_SEC" ]; then
@@ -209,7 +218,7 @@ fi
 echo "╔════════════════════════════════════╗"
 
 printf "║ Host    : %-24s ║\n" "$(fit "$HOSTNAME")"
-printf "║ Load    : %-24s ║\n" "$(fit "$LOAD")"
+printf "║ Load    : ${LOAD_RED}%-24s${LOAD_RESET} ║\n" "$(fit "$LOAD")"
 line "Memory  : ${MEM_USED_MB} / ${MEM_TOTAL_MB} MB (${MEM_PERCENT}%)"
 printf "║ Free RAM: %-24s ║\n" "${MEM_FREE_MB} MB"
 printf "║ Temp    : %-24s ║\n" "$(fit "$TEMP_TEXT")"
