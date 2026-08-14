@@ -21,7 +21,7 @@ HOSTNAME="$(hostname 2>/dev/null)"
 
 LOAD="$(cat /proc/loadavg 2>/dev/null | awk '{print $1,$2,$3}')"
 
-# load
+# load > 3
 if [ -n "$LOAD" ] && [ "$(echo "$LOAD" | awk '{print ($1 > 3) ? 1 : 0}')" = "1" ]; then
     LOAD_RED="\033[31m"
     LOAD_RESET="\033[0m"
@@ -87,6 +87,18 @@ done
 [ "$TEMP_MAX" = "0" ] && TEMP_MAX="N/A"
 
 TEMP_TEXT="${TEMP_MIN}C ~ ${TEMP_MAX}C"
+
+# temp > 60
+TEMP_RED=""
+TEMP_RESET=""
+if [ "$TEMP_MAX" != "N/A" ]; then
+    LIMIT=60
+    [ "$TEMP_MAX" -gt 1000 ] && LIMIT=60000
+    if [ "$TEMP_MAX" -gt "$LIMIT" ]; then
+        TEMP_RED="\033[31m"
+        TEMP_RESET="\033[0m"
+    fi
+fi
 
 # IP
 LAN_IP="$(ifconfig br-lan 2>/dev/null |
@@ -221,7 +233,7 @@ printf "║ Host    : %-24s ║\n" "$(fit "$HOSTNAME")"
 printf "║ Load    : ${LOAD_RED}%-24s${LOAD_RESET} ║\n" "$(fit "$LOAD")"
 line "Memory  : ${MEM_USED_MB} / ${MEM_TOTAL_MB} MB (${MEM_PERCENT}%)"
 printf "║ Free RAM: %-24s ║\n" "${MEM_FREE_MB} MB"
-printf "║ Temp    : %-24s ║\n" "$(fit "$TEMP_TEXT")"
+printf "║ Temp    : ${TEMP_RED}%-24s${TEMP_RESET} ║\n" "$(fit "$TEMP_TEXT")"
 printf "║ Uptime  : %-24s ║\n" "$(fit "$UPTIME")"
 
 echo "╠════════════════════════════════════╣"
