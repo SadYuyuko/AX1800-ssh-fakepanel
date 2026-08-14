@@ -9,3 +9,4 @@
   <img width="400" height="500" alt="1" src="https://github.com/user-attachments/assets/cd257d47-e3c6-4519-98a1-eb0c9b8c01a3" />  
 
 删除：执行`rm /usr/bin/panel`  
+ssh连接后自动显示：执行`echo "/usr/bin/panel" >> /etc/profile`  
