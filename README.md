@@ -1,6 +1,13 @@
 # AX1800-ssh-fakepanel  
 适用于小米AX1800或其他长得像路由器的东西，在原版固件下仅用ssh展示温度内存等信息  
 
+## 一键安装
+```
+curl -fsSL https://raw.githubusercontent.com/SadYuyuko/AX1800-ssh-fakepanel/main/panel-online | sh
+```
+选择：`0` 直接安装，`1` 安装并加入SSH连接自动展示
+
+## 手动安装
 1. ssh连接。如果用winscp把[panel](https://raw.githubusercontent.com/SadYuyuko/AX1800-ssh-fakepanel/main/panel)放入`/usr/bin/`则跳到第4步  
 2. 执行`vi /usr/bin/panel`，粘贴[panel](https://raw.githubusercontent.com/SadYuyuko/AX1800-ssh-fakepanel/main/panel)内容
 3. `ESC`，`:wq`保存退出  
