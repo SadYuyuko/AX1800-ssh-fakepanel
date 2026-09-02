@@ -3,8 +3,8 @@
 REPO="https://raw.githubusercontent.com/SadYuyuko/AX1800-ssh-fakepanel/main"
 DEST="/usr/bin/panel"
 
-echo "0 - Install"
-echo "1 - Install + auto-run on SSH login"
+echo "0 - 直接安装"
+echo "1 - 安装并加入ssh连接自动展示"
 echo ""
 read -p "Select [0]: " CHOICE
 
