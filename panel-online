@@ -6,18 +6,18 @@ DEST="/usr/bin/panel"
 echo "0 - 直接安装"
 echo "1 - 安装并加入ssh连接自动展示"
 echo ""
-printf "Select [0]: "
+printf "按回车默认[0]: "
 read CHOICE < /dev/tty
 
-echo "Downloading panel..."
-curl -fsSL "$REPO/panel" -o "$DEST" || { echo "Download failed"; exit 1; }
+echo "下载panel..."
+curl -fsSL "$REPO/panel" -o "$DEST" || { echo "下载失败"; exit 1; }
 chmod +x "$DEST"
 
 if [ "$CHOICE" = "1" ]; then
     grep -q "^panel$" /etc/profile 2>/dev/null || echo "panel" >> /etc/profile
-    echo "Installed + added to /etc/profile"
+    echo "安装成功并写入/etc/profile连接自动展示"
 else
     echo "Installed to $DEST"
 fi
 
-echo "Run: panel"
+echo "执行panel以展示"
