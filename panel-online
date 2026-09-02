@@ -15,9 +15,9 @@ chmod +x "$DEST"
 
 if [ "$CHOICE" = "1" ]; then
     grep -q "^panel$" /etc/profile 2>/dev/null || echo "panel" >> /etc/profile
-    echo "安装成功并写入/etc/profile连接自动展示"
+    echo "安装成功并写入/etc/profile"
 else
     echo "Installed to $DEST"
 fi
 
-echo "执行panel以展示"
+echo "执行panel以展示面板"
