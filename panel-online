@@ -6,7 +6,8 @@ DEST="/usr/bin/panel"
 echo "0 - 直接安装"
 echo "1 - 安装并加入ssh连接自动展示"
 echo ""
-read -p "Select [0]: " CHOICE
+printf "Select [0]: "
+read CHOICE
 
 echo "Downloading panel..."
 curl -fsSL "$REPO/panel" -o "$DEST" || { echo "Download failed"; exit 1; }
