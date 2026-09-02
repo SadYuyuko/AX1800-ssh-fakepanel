@@ -14,7 +14,7 @@ curl -fsSL "$REPO/panel" -o "$DEST" || { echo "下载失败"; exit 1; }
 chmod +x "$DEST"
 
 if [ "$CHOICE" = "1" ]; then
-    grep -q "^panel$" /etc/profile 2>/dev/null || echo "panel" >> /etc/profile
+    grep -q "^panel$" /etc/profile 2>/dev/null || echo "/usr/bin/panel" >> /etc/profile
     echo "安装成功并写入/etc/profile"
 else
     echo "Installed to $DEST"
