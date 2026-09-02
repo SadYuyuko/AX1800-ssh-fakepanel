@@ -1,0 +1,260 @@
+#!/bin/sh
+
+# BusyBox 1.25.1 compatible
+
+WIDTH=36
+
+# helper
+fit()
+{
+    echo "$1" | cut -c1-$WIDTH
+}
+
+line()
+{
+    printf "║ %-34s ║\n" "$1"
+}
+
+# system
+HOSTNAME="$(hostname 2>/dev/null)"
+[ -z "$HOSTNAME" ] && HOSTNAME="XiaoQiang"
+
+LOAD="$(cat /proc/loadavg 2>/dev/null | awk '{print $1,$2,$3}')"
+
+# load > 3
+if [ -n "$LOAD" ] && [ "$(echo "$LOAD" | awk '{print ($1 > 3) ? 1 : 0}')" = "1" ]; then
+    LOAD_RED="\033[31m"
+    LOAD_RESET="\033[0m"
+else
+    LOAD_RED=""
+    LOAD_RESET=""
+fi
+
+UPTIME_SEC="$(cat /proc/uptime 2>/dev/null | awk '{print int($1)}')"
+
+if [ -n "$UPTIME_SEC" ]; then
+    DAYS=$((UPTIME_SEC / 86400))
+    HOURS=$(((UPTIME_SEC % 86400) / 3600))
+    MINS=$(((UPTIME_SEC % 3600) / 60))
+
+    if [ "$DAYS" -gt 0 ]; then
+        UPTIME="${DAYS}d ${HOURS}h ${MINS}m"
+    else
+        UPTIME="${HOURS}h ${MINS}m"
+    fi
+else
+    UPTIME="N/A"
+fi
+
+# memory
+MEM_TOTAL_KB="$(awk '/^MemTotal:/ {print $2}' /proc/meminfo 2>/dev/null)"
+MEM_FREE_KB="$(awk '/^MemFree:/ {print $2}' /proc/meminfo 2>/dev/null)"
+MEM_BUFF_KB="$(awk '/^Buffers:/ {print $2}' /proc/meminfo 2>/dev/null)"
+MEM_CACHE_KB="$(awk '/^Cached:/ {print $2}' /proc/meminfo 2>/dev/null)"
+
+if [ -n "$MEM_TOTAL_KB" ]; then
+    MEM_USED_KB=$((MEM_TOTAL_KB - MEM_FREE_KB - MEM_BUFF_KB - MEM_CACHE_KB))
+    [ "$MEM_USED_KB" -lt 0 ] && MEM_USED_KB=0
+    MEM_TOTAL_MB=$((MEM_TOTAL_KB / 1024))
+    MEM_USED_MB=$((MEM_USED_KB / 1024))
+    MEM_FREE_MB=$(( (MEM_FREE_KB + MEM_BUFF_KB + MEM_CACHE_KB) / 1024 ))
+    MEM_PERCENT=$((MEM_USED_KB * 100 / MEM_TOTAL_KB))
+else
+    MEM_TOTAL_MB=0
+    MEM_USED_MB=0
+    MEM_FREE_MB=0
+    MEM_PERCENT=0
+fi
+
+# temperature
+TEMP_MIN=999
+TEMP_MAX=0
+
+for zone in /sys/class/thermal/thermal_zone*; do
+    [ -f "$zone/temp" ] || continue
+
+    TEMP="$(cat "$zone/temp" 2>/dev/null)"
+
+    case "$TEMP" in
+        ''|*[!0-9]*) continue ;;
+    esac
+
+    [ "$TEMP" -lt "$TEMP_MIN" ] && TEMP_MIN="$TEMP"
+    [ "$TEMP" -gt "$TEMP_MAX" ] && TEMP_MAX="$TEMP"
+done
+
+[ "$TEMP_MIN" = "999" ] && TEMP_MIN="N/A"
+[ "$TEMP_MAX" = "0" ] && TEMP_MAX="N/A"
+
+TEMP_TEXT="${TEMP_MIN}C ~ ${TEMP_MAX}C"
+
+# temp > 60
+TEMP_RED=""
+TEMP_RESET=""
+if [ "$TEMP_MAX" != "N/A" ]; then
+    LIMIT=60
+    [ "$TEMP_MAX" -gt 1000 ] && LIMIT=60000
+    if [ "$TEMP_MAX" -gt "$LIMIT" ]; then
+        TEMP_RED="\033[31m"
+        TEMP_RESET="\033[0m"
+    fi
+fi
+
+# IP
+LAN_IP="$(ifconfig br-lan 2>/dev/null |
+    awk '/inet addr:/ {print $2}' |
+    sed 's/addr://' |
+    head -1)"
+
+[ -z "$LAN_IP" ] && LAN_IP="N/A"
+
+# WAN
+WAN_IP=""
+
+# relay mode
+RELAY_IFACE=""
+for RIFACE in wl12 wl13 wl0 wl1; do
+    if iwconfig "$RIFACE" 2>/dev/null | grep -q 'Mode:Managed'; then
+        RELAY_IFACE="$RIFACE"
+        break
+    fi
+done
+
+if [ -n "$RELAY_IFACE" ] && [ "$LAN_IP" != "N/A" ]; then
+    WAN_IP="$LAN_IP [relay]"
+fi
+
+if [ -z "$WAN_IP" ]; then
+    for IFACE in eth0 eth1 eth2 eth3 eth4 bond0 ppp0 wan; do
+        IP="$(ifconfig "$IFACE" 2>/dev/null |
+            awk '/inet addr:/ {print $2}' |
+            sed 's/addr://' |
+            head -1)"
+
+        if [ -n "$IP" ]; then
+            WAN_IP="$IP"
+            break
+        fi
+    done
+fi
+
+[ -z "$WAN_IP" ] && WAN_IP="N/A"
+
+# WiFi
+WIFI5="$(iwconfig wl0 2>/dev/null)"
+WIFI24="$(iwconfig wl1 2>/dev/null)"
+
+SSID5="$(echo "$WIFI5" |
+    sed -n 's/.*ESSID:"\([^"]*\)".*/\1/p')"
+
+SSID24="$(echo "$WIFI24" |
+    sed -n 's/.*ESSID:"\([^"]*\)".*/\1/p')"
+
+[ -z "$SSID5" ] && SSID5="N/A"
+[ -z "$SSID24" ] && SSID24="N/A"
+
+FREQ5="$(echo "$WIFI5" |
+    sed -n 's/.*Frequency:\([0-9.]*\) GHz.*/\1/p')"
+
+FREQ24="$(echo "$WIFI24" |
+    sed -n 's/.*Frequency:\([0-9.]*\) GHz.*/\1/p')"
+
+# channel
+case "$FREQ5" in
+    5.18) CH5=36 ;;
+    5.20) CH5=40 ;;
+    5.22) CH5=44 ;;
+    5.24) CH5=48 ;;
+    5.26) CH5=52 ;;
+    5.28) CH5=56 ;;
+    5.30) CH5=60 ;;
+    5.32) CH5=64 ;;
+    5.50) CH5=100 ;;
+    5.52) CH5=104 ;;
+    5.54) CH5=108 ;;
+    5.56) CH5=112 ;;
+    5.58) CH5=116 ;;
+    5.60) CH5=120 ;;
+    5.62) CH5=124 ;;
+    5.64) CH5=128 ;;
+    5.66) CH5=132 ;;
+    5.68) CH5=136 ;;
+    5.70) CH5=140 ;;
+    5.72) CH5=144 ;;
+    5.745) CH5=149 ;;
+    5.765) CH5=153 ;;
+    5.785) CH5=157 ;;
+    5.805) CH5=161 ;;
+    5.825) CH5=165 ;;
+    *) CH5="?" ;;
+esac
+
+case "$FREQ24" in
+    2.412) CH24=1 ;;
+    2.417) CH24=2 ;;
+    2.422) CH24=3 ;;
+    2.427) CH24=4 ;;
+    2.432) CH24=5 ;;
+    2.437) CH24=6 ;;
+    2.442) CH24=7 ;;
+    2.447) CH24=8 ;;
+    2.452) CH24=9 ;;
+    2.457) CH24=10 ;;
+    2.462) CH24=11 ;;
+    2.467) CH24=12 ;;
+    2.472) CH24=13 ;;
+    *) CH24="?" ;;
+esac
+
+# client count
+CLIENTS5="$(grep -c '^entry mac=' /proc/wl0/clients_rates 2>/dev/null)"
+CLIENTS24="$(grep -c '^entry mac=' /proc/wl1/clients_rates 2>/dev/null)"
+
+[ -z "$CLIENTS5" ] && CLIENTS5=0
+[ -z "$CLIENTS24" ] && CLIENTS24=0
+
+# status
+if echo "$WIFI5" | grep -q 'Mode:Master'; then
+    STATUS5="ON"
+else
+    STATUS5="OFF"
+fi
+
+if echo "$WIFI24" | grep -q 'Mode:Master'; then
+    STATUS24="ON"
+else
+    STATUS24="OFF"
+fi
+
+# display
+echo "╔════════════════════════════════════╗"
+
+printf "║ Host    : %-24s ║\n" "$(fit "$HOSTNAME")"
+printf "║ Load    : ${LOAD_RED}%-24s${LOAD_RESET} ║\n" "$(fit "$LOAD")"
+line "Memory  : ${MEM_USED_MB} / ${MEM_TOTAL_MB} MB (${MEM_PERCENT}%)"
+printf "║ Free RAM: %-24s ║\n" "${MEM_FREE_MB} MB"
+printf "║ Temp    : ${TEMP_RED}%-24s${TEMP_RESET} ║\n" "$(fit "$TEMP_TEXT")"
+printf "║ Uptime  : %-24s ║\n" "$(fit "$UPTIME")"
+
+echo "╠════════════════════════════════════╣"
+
+printf "║ WAN IP  : %-24s ║\n" "$(fit "$WAN_IP")"
+printf "║ LAN IP  : %-24s ║\n" "$(fit "$LAN_IP")"
+
+echo "╠════════════════════════════════════╣"
+
+echo "║ 5 GHz                              ║"
+printf "║ Status  : %-24s ║\n" "$STATUS5"
+printf "║ SSID    : %-24s ║\n" "$(fit "$SSID5")"
+printf "║ Channel : %-24s ║\n" "$CH5"
+printf "║ Clients : %-24s ║\n" "$CLIENTS5"
+
+echo "╠════════════════════════════════════╣"
+
+echo "║ 2.4 GHz                            ║"
+printf "║ Status  : %-24s ║\n" "$STATUS24"
+printf "║ SSID    : %-24s ║\n" "$(fit "$SSID24")"
+printf "║ Channel : %-24s ║\n" "$CH24"
+printf "║ Clients : %-24s ║\n" "$CLIENTS24"
+
+echo "╚════════════════════════════════════╝"
